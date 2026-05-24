@@ -409,7 +409,7 @@ function createStyles(colors: typeof lightColors) {
     counterLabel: {
       color: colors.mutedText,
       fontSize: 16,
-      fontWeight: '300',
+      fontWeight: '400',
       textAlign: 'center',
       marginBottom: 4,
     },
@@ -443,7 +443,7 @@ function createStyles(colors: typeof lightColors) {
       bottom: 48,
       color: colors.mutedText,
       fontSize: 16,
-      fontWeight: '300',
+      fontWeight: '400',
       textAlign: 'center',
       paddingHorizontal: 24,
     },
