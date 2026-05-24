@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { useAudioPlayer } from 'expo-audio';
+import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   Animated,
   Pressable,
@@ -24,6 +24,13 @@ export default function App() {
   const nextPlayerIndex = useRef(0);
   const buttonScale = useRef(new Animated.Value(1)).current;
   const buttonHighlight = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    setAudioModeAsync({
+      interruptionMode: 'mixWithOthers',
+      playsInSilentMode: true,
+    });
+  }, []);
 
   function playClick() {
     const clickPlayers = [clickPlayerOne, clickPlayerTwo, clickPlayerThree];
