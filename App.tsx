@@ -158,7 +158,7 @@ export default function App() {
     return (
       <View style={styles.container}>
         <Pressable style={styles.settingsButton} onPress={() => setScreen('settings')}>
-          <Text style={styles.settingsButtonText}>Settings</Text>
+          <Text style={styles.settingsButtonText}>⚙</Text>
         </Pressable>
 
         <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
@@ -172,6 +172,8 @@ export default function App() {
             />
           </Animated.View>
         </Pressable>
+
+        <Text style={styles.mainHint}>Tap the button for a click</Text>
       </View>
     );
   }
@@ -327,22 +329,24 @@ function createStyles(colors: typeof lightColors) {
       position: 'absolute',
       top: 64,
       right: 24,
+      width: 48,
+      height: 48,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 999,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
       backgroundColor: colors.controlBackground,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     settingsButtonText: {
       color: colors.text,
-      fontSize: 16,
-      fontWeight: '600',
+      fontSize: 26,
+      lineHeight: 28,
     },
     button: {
-      width: 220,
-      height: 220,
-      borderRadius: 110,
+      width: 380,
+      height: 380,
+      borderRadius: 190,
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
@@ -350,6 +354,15 @@ function createStyles(colors: typeof lightColors) {
     buttonImage: {
       width: '100%',
       height: '100%',
+    },
+    mainHint: {
+      position: 'absolute',
+      bottom: 48,
+      color: colors.mutedText,
+      fontSize: 16,
+      fontWeight: '300',
+      textAlign: 'center',
+      paddingHorizontal: 24,
     },
     scrollScreen: {
       flex: 1,
