@@ -35,11 +35,13 @@ type ThemeSetting = 'light' | 'dark' | 'system';
 type SavedSettings = {
   theme: ThemeSetting;
   hapticsEnabled: boolean;
+  showCounter: boolean;
 };
 
 const defaultSettings: SavedSettings = {
   theme: 'system',
   hapticsEnabled: true,
+  showCounter: true,
 };
 
 export default function App() {
@@ -54,6 +56,8 @@ export default function App() {
   const [hapticsEnabled, setHapticsEnabledState] = useState(
     defaultSettings.hapticsEnabled
   );
+  const [showCounter, setShowCounterState] = useState(defaultSettings.showCounter);
+  const [clickCount, setClickCount] = useState(0);
 
   const activeTheme = theme === 'system' ? systemTheme ?? 'light' : theme;
   const colors = activeTheme === 'dark' ? darkColors : lightColors;
@@ -83,6 +87,10 @@ export default function App() {
       if (typeof parsedSettings.hapticsEnabled === 'boolean') {
         setHapticsEnabledState(parsedSettings.hapticsEnabled);
       }
+
+      if (typeof parsedSettings.showCounter === 'boolean') {
+        setShowCounterState(parsedSettings.showCounter);
+      }
     }
 
     loadSettings();
@@ -97,12 +105,17 @@ export default function App() {
 
   function setTheme(nextTheme: ThemeSetting) {
     setThemeState(nextTheme);
-    saveSettings({ theme: nextTheme, hapticsEnabled });
+    saveSettings({ theme: nextTheme, hapticsEnabled, showCounter });
   }
 
   function setHapticsEnabled(nextValue: boolean) {
     setHapticsEnabledState(nextValue);
-    saveSettings({ theme, hapticsEnabled: nextValue });
+    saveSettings({ theme, hapticsEnabled: nextValue, showCounter });
+  }
+
+  function setShowCounter(nextValue: boolean) {
+    setShowCounterState(nextValue);
+    saveSettings({ theme, hapticsEnabled, showCounter: nextValue });
   }
 
   function playHapticFeedback() {
@@ -123,6 +136,7 @@ export default function App() {
       playHapticFeedback();
     }
 
+    setClickCount((currentCount) => currentCount + 1);
     clickPlayer.play();
 
     setTimeout(() => {
@@ -173,7 +187,14 @@ export default function App() {
           </Animated.View>
         </Pressable>
 
-        <Text style={styles.mainHint}>Tap the button for a click</Text>
+        {showCounter && (
+          <View style={styles.counterGroup}>
+            <Text style={styles.counterLabel}>Total clicks</Text>
+            <Text style={styles.clickCounter}>{clickCount}</Text>
+          </View>
+        )}
+
+        <Text style={styles.mainHint}>Tap to click</Text>
       </View>
     );
   }
@@ -225,6 +246,24 @@ export default function App() {
             <Switch
               value={hapticsEnabled}
               onValueChange={setHapticsEnabled}
+              trackColor={{
+                false: colors.switchTrackOff,
+                true: colors.switchTrackOn,
+              }}
+              thumbColor={colors.switchThumb}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.settingRow}>
+            <View>
+              <Text style={styles.sectionTitle}>Click Counter</Text>
+              <Text style={styles.settingDescription}>Show clicks on the main screen</Text>
+            </View>
+            <Switch
+              value={showCounter}
+              onValueChange={setShowCounter}
               trackColor={{
                 false: colors.switchTrackOff,
                 true: colors.switchTrackOn,
@@ -344,8 +383,8 @@ function createStyles(colors: typeof lightColors) {
       lineHeight: 28,
     },
     button: {
-      width: 380,
-      height: 380,
+      width: 460,
+      height: 460,
       borderRadius: 190,
       alignItems: 'center',
       justifyContent: 'center',
@@ -354,6 +393,22 @@ function createStyles(colors: typeof lightColors) {
     buttonImage: {
       width: '100%',
       height: '100%',
+    },
+    counterGroup: {
+      alignItems: 'center',
+      marginTop: 18,
+    },
+    counterLabel: {
+      color: colors.mutedText,
+      fontSize: 16,
+      fontWeight: '300',
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+    clickCounter: {
+      color: '#4e92fc',
+      fontSize: 42,
+      fontWeight: '700',
     },
     mainHint: {
       position: 'absolute',
