@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import {
   Animated,
   Pressable,
@@ -10,34 +10,35 @@ import {
   View,
 } from 'react-native';
 
+const clickSound = require('./assets/sounds/click.mp3');
+const audioOptions = {
+  keepAudioSessionActive: true,
+  updateInterval: 1000,
+};
+const resetDelayMs = 1500;
+
 export default function App() {
-  const clickSound = useRef<Audio.Sound | null>(null);
+  const clickPlayerOne = useAudioPlayer(clickSound, audioOptions);
+  const clickPlayerTwo = useAudioPlayer(clickSound, audioOptions);
+  const clickPlayerThree = useAudioPlayer(clickSound, audioOptions);
+  const nextPlayerIndex = useRef(0);
   const buttonScale = useRef(new Animated.Value(1)).current;
   const buttonHighlight = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    async function loadClickSound() {
-      const { sound } = await Audio.Sound.createAsync(
-        require('./assets/sounds/click.mp3')
-      );
+  function playClick() {
+    const clickPlayers = [clickPlayerOne, clickPlayerTwo, clickPlayerThree];
+    const clickPlayer = clickPlayers[nextPlayerIndex.current];
+    nextPlayerIndex.current = (nextPlayerIndex.current + 1) % clickPlayers.length;
 
-      clickSound.current = sound;
-    }
-
-    loadClickSound();
-
-    return () => {
-      clickSound.current?.unloadAsync();
-    };
-  }, []);
-
-  async function playClick() {
     Vibration.vibrate(20);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    if (clickSound.current) {
-      await clickSound.current.replayAsync();
-    }
+    clickPlayer.play();
+
+    setTimeout(() => {
+      clickPlayer.pause();
+      clickPlayer.seekTo(0);
+    }, resetDelayMs);
   }
 
   function handlePressIn() {
