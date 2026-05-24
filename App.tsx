@@ -2,10 +2,18 @@ import { StatusBar } from 'expo-status-bar';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, Text, Vibration, View } from 'react-native';
+import {
+  Animated,
+  Pressable,
+  StyleSheet,
+  Vibration,
+  View,
+} from 'react-native';
 
 export default function App() {
   const clickSound = useRef<Audio.Sound | null>(null);
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const buttonHighlight = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     async function loadClickSound() {
@@ -23,7 +31,7 @@ export default function App() {
     };
   }, []);
 
-  async function handlePress() {
+  async function playClick() {
     Vibration.vibrate(20);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -32,10 +40,58 @@ export default function App() {
     }
   }
 
+  function handlePressIn() {
+    playClick();
+
+    Animated.parallel([
+      Animated.timing(buttonScale, {
+        toValue: 0.94,
+        duration: 70,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonHighlight, {
+        toValue: 0.22,
+        duration: 70,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }
+
+  function handlePressOut() {
+    Animated.parallel([
+      Animated.spring(buttonScale, {
+        toValue: 1,
+        speed: 28,
+        bounciness: 4,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonHighlight, {
+        toValue: 0,
+        duration: 90,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }
+
   return (
     <View style={styles.container}>
-      <Pressable style={styles.button} onPress={handlePress}>
-        <Text style={styles.buttonText}>Click</Text>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+      >
+        <Animated.View
+          style={[styles.button, { transform: [{ scale: buttonScale }] }]}
+        >
+          <Animated.Image
+            source={require('./assets/images/clicker.png')}
+            style={styles.buttonImage}
+            resizeMode="contain"
+          />
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.highlight, { opacity: buttonHighlight }]}
+          />
+        </Animated.View>
       </Pressable>
       <StatusBar style="auto" />
     </View>
@@ -53,13 +109,16 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: '#111111',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 36,
-    fontWeight: '700',
+  buttonImage: {
+    width: '100%',
+    height: '100%',
+  },
+  highlight: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#ffffff',
   },
 });
