@@ -190,7 +190,15 @@ export default function App() {
         {showCounter && (
           <View style={styles.counterGroup}>
             <Text style={styles.counterLabel}>Total clicks</Text>
-            <Text style={styles.clickCounter}>{clickCount}</Text>
+            <View style={styles.counterRow}>
+              <Pressable
+                style={styles.resetCounterButton}
+                onPress={() => setClickCount(0)}
+              >
+                <Text style={styles.resetCounterButtonText}>↻</Text>
+              </Pressable>
+              <Text style={styles.clickCounter}>{clickCount}</Text>
+            </View>
           </View>
         )}
 
@@ -405,9 +413,29 @@ function createStyles(colors: typeof lightColors) {
       textAlign: 'center',
       marginBottom: 4,
     },
+    counterRow: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      minWidth: 120,
+    },
     clickCounter: {
       color: '#4e92fc',
       fontSize: 42,
+      fontWeight: '700',
+    },
+    resetCounterButton: {
+      position: 'absolute',
+      left: 0,
+      width: 30,
+      height: 30,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    resetCounterButtonText: {
+      color: '#4e92fc',
+      fontSize: 28,
+      lineHeight: 28,
       fontWeight: '700',
     },
     mainHint: {
