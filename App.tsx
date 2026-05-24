@@ -49,7 +49,6 @@ export default function App() {
   const clickPlayerThree = useAudioPlayer(clickSound, audioOptions);
   const nextPlayerIndex = useRef(0);
   const buttonScale = useRef(new Animated.Value(1)).current;
-  const buttonHighlight = useRef(new Animated.Value(0)).current;
   const [screen, setScreen] = useState<Screen>('main');
   const [theme, setThemeState] = useState<ThemeSetting>(defaultSettings.theme);
   const [hapticsEnabled, setHapticsEnabledState] = useState(
@@ -141,11 +140,6 @@ export default function App() {
         duration: 70,
         useNativeDriver: true,
       }),
-      Animated.timing(buttonHighlight, {
-        toValue: 0.22,
-        duration: 70,
-        useNativeDriver: true,
-      }),
     ]).start();
   }
 
@@ -155,11 +149,6 @@ export default function App() {
         toValue: 1,
         speed: 28,
         bounciness: 4,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonHighlight, {
-        toValue: 0,
-        duration: 90,
         useNativeDriver: true,
       }),
     ]).start();
@@ -180,10 +169,6 @@ export default function App() {
               source={clickerImage}
               style={styles.buttonImage}
               resizeMode="contain"
-            />
-            <Animated.View
-              pointerEvents="none"
-              style={[styles.highlight, { opacity: buttonHighlight }]}
             />
           </Animated.View>
         </Pressable>
@@ -365,10 +350,6 @@ function createStyles(colors: typeof lightColors) {
     buttonImage: {
       width: '100%',
       height: '100%',
-    },
-    highlight: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: '#ffffff',
     },
     scrollScreen: {
       flex: 1,
