@@ -1,29 +1,64 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
+  Switch,
+  Text,
+  useColorScheme,
   Vibration,
   View,
 } from 'react-native';
 
 const clickSound = require('./assets/sounds/click.mp3');
+const clickerImage = require('./assets/images/clicker.png');
+
 const audioOptions = {
   keepAudioSessionActive: true,
   updateInterval: 1000,
 };
 const resetDelayMs = 1500;
+const settingsStorageKey = 'dog-clicker-settings';
+const socialLink = 'https://github.com/simi-canari';
+const soundCreditLink =
+  'https://pixabay.com/fr/sound-effects/films-et-effets-sp%C3%A9ciaux-metal-clicker-dog-training-stereo-clip-74690/';
+
+type Screen = 'main' | 'settings' | 'about';
+type ThemeSetting = 'light' | 'dark' | 'system';
+
+type SavedSettings = {
+  theme: ThemeSetting;
+  hapticsEnabled: boolean;
+};
+
+const defaultSettings: SavedSettings = {
+  theme: 'system',
+  hapticsEnabled: true,
+};
 
 export default function App() {
+  const systemTheme = useColorScheme();
   const clickPlayerOne = useAudioPlayer(clickSound, audioOptions);
   const clickPlayerTwo = useAudioPlayer(clickSound, audioOptions);
   const clickPlayerThree = useAudioPlayer(clickSound, audioOptions);
   const nextPlayerIndex = useRef(0);
   const buttonScale = useRef(new Animated.Value(1)).current;
   const buttonHighlight = useRef(new Animated.Value(0)).current;
+  const [screen, setScreen] = useState<Screen>('main');
+  const [theme, setThemeState] = useState<ThemeSetting>(defaultSettings.theme);
+  const [hapticsEnabled, setHapticsEnabledState] = useState(
+    defaultSettings.hapticsEnabled
+  );
+
+  const activeTheme = theme === 'system' ? systemTheme ?? 'light' : theme;
+  const colors = activeTheme === 'dark' ? darkColors : lightColors;
+  const styles = createStyles(colors);
 
   useEffect(() => {
     setAudioModeAsync({
@@ -32,13 +67,54 @@ export default function App() {
     });
   }, []);
 
+  useEffect(() => {
+    async function loadSettings() {
+      const savedSettings = await AsyncStorage.getItem(settingsStorageKey);
+
+      if (!savedSettings) {
+        return;
+      }
+
+      const parsedSettings = JSON.parse(savedSettings) as Partial<SavedSettings>;
+
+      if (isThemeSetting(parsedSettings.theme)) {
+        setThemeState(parsedSettings.theme);
+      }
+
+      if (typeof parsedSettings.hapticsEnabled === 'boolean') {
+        setHapticsEnabledState(parsedSettings.hapticsEnabled);
+      }
+    }
+
+    loadSettings();
+  }, []);
+
+  async function saveSettings(nextSettings: SavedSettings) {
+    await AsyncStorage.setItem(
+      settingsStorageKey,
+      JSON.stringify(nextSettings)
+    );
+  }
+
+  function setTheme(nextTheme: ThemeSetting) {
+    setThemeState(nextTheme);
+    saveSettings({ theme: nextTheme, hapticsEnabled });
+  }
+
+  function setHapticsEnabled(nextValue: boolean) {
+    setHapticsEnabledState(nextValue);
+    saveSettings({ theme, hapticsEnabled: nextValue });
+  }
+
   function playClick() {
     const clickPlayers = [clickPlayerOne, clickPlayerTwo, clickPlayerThree];
     const clickPlayer = clickPlayers[nextPlayerIndex.current];
     nextPlayerIndex.current = (nextPlayerIndex.current + 1) % clickPlayers.length;
 
-    Vibration.vibrate(20);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (hapticsEnabled) {
+      Vibration.vibrate(20);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
 
     clickPlayer.play();
 
@@ -81,52 +157,307 @@ export default function App() {
     ]).start();
   }
 
-  return (
-    <View style={styles.container}>
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-      >
-        <Animated.View
-          style={[styles.button, { transform: [{ scale: buttonScale }] }]}
-        >
-          <Animated.Image
-            source={require('./assets/images/clicker.png')}
-            style={styles.buttonImage}
-            resizeMode="contain"
-          />
+  function renderMainScreen() {
+    return (
+      <View style={styles.container}>
+        <Pressable style={styles.settingsButton} onPress={() => setScreen('settings')}>
+          <Text style={styles.settingsButtonText}>Settings</Text>
+        </Pressable>
+
+        <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
           <Animated.View
-            pointerEvents="none"
-            style={[styles.highlight, { opacity: buttonHighlight }]}
-          />
-        </Animated.View>
-      </Pressable>
-      <StatusBar style="auto" />
-    </View>
+            style={[styles.button, { transform: [{ scale: buttonScale }] }]}
+          >
+            <Animated.Image
+              source={clickerImage}
+              style={styles.buttonImage}
+              resizeMode="contain"
+            />
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.highlight, { opacity: buttonHighlight }]}
+            />
+          </Animated.View>
+        </Pressable>
+      </View>
+    );
+  }
+
+  function renderSettingsScreen() {
+    return (
+      <ScrollView
+        contentContainerStyle={styles.screenContent}
+        style={styles.scrollScreen}
+      >
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => setScreen('main')}>
+            <Text style={styles.backButtonText}>Back</Text>
+          </Pressable>
+          <Text style={styles.title}>Settings</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Theme</Text>
+          <View style={styles.segmentedControl}>
+            {(['light', 'dark', 'system'] as ThemeSetting[]).map((item) => (
+              <Pressable
+                key={item}
+                style={[
+                  styles.segmentButton,
+                  theme === item && styles.segmentButtonActive,
+                ]}
+                onPress={() => setTheme(item)}
+              >
+                <Text
+                  style={[
+                    styles.segmentButtonText,
+                    theme === item && styles.segmentButtonTextActive,
+                  ]}
+                >
+                  {capitalize(item)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.settingRow}>
+            <View>
+              <Text style={styles.sectionTitle}>Haptics</Text>
+              <Text style={styles.settingDescription}>Vibrate on click</Text>
+            </View>
+            <Switch
+              value={hapticsEnabled}
+              onValueChange={setHapticsEnabled}
+              trackColor={{
+                false: colors.switchTrackOff,
+                true: colors.switchTrackOn,
+              }}
+              thumbColor={colors.switchThumb}
+            />
+          </View>
+        </View>
+
+        <Pressable style={styles.aboutButton} onPress={() => setScreen('about')}>
+          <Text style={styles.aboutButtonText}>About</Text>
+        </Pressable>
+      </ScrollView>
+    );
+  }
+
+  function renderAboutScreen() {
+    return (
+      <ScrollView
+        contentContainerStyle={styles.screenContent}
+        style={styles.scrollScreen}
+      >
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => setScreen('settings')}>
+            <Text style={styles.backButtonText}>Back</Text>
+          </Pressable>
+          <Text style={styles.title}>About 🐕</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Socials</Text>
+          <Pressable onPress={() => Linking.openURL(socialLink)}>
+            <Text style={styles.linkText}>{socialLink}</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Sound Credit</Text>
+          <Pressable onPress={() => Linking.openURL(soundCreditLink)}>
+            <Text style={styles.linkText}>{soundCreditLink}</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  return (
+    <>
+      {screen === 'main' && renderMainScreen()}
+      {screen === 'settings' && renderSettingsScreen()}
+      {screen === 'about' && renderAboutScreen()}
+      <StatusBar style={activeTheme === 'dark' ? 'light' : 'dark'} />
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  button: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  buttonImage: {
-    width: '100%',
-    height: '100%',
-  },
-  highlight: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#ffffff',
-  },
-});
+function isThemeSetting(value: unknown): value is ThemeSetting {
+  return value === 'light' || value === 'dark' || value === 'system';
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+const lightColors = {
+  background: '#ffffff',
+  text: '#171717',
+  mutedText: '#666666',
+  border: '#dedede',
+  controlBackground: '#f2f2f2',
+  activeBackground: '#171717',
+  activeText: '#ffffff',
+  link: '#0b6bcb',
+  switchTrackOff: '#d6d6d6',
+  switchTrackOn: '#111111',
+  switchThumb: '#ffffff',
+};
+
+const darkColors = {
+  background: '#121212',
+  text: '#f4f4f4',
+  mutedText: '#b8b8b8',
+  border: '#383838',
+  controlBackground: '#222222',
+  activeBackground: '#f4f4f4',
+  activeText: '#121212',
+  link: '#75b7ff',
+  switchTrackOff: '#4a4a4a',
+  switchTrackOn: '#f4f4f4',
+  switchThumb: '#ffffff',
+};
+
+function createStyles(colors: typeof lightColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    settingsButton: {
+      position: 'absolute',
+      top: 64,
+      right: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 999,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      backgroundColor: colors.controlBackground,
+    },
+    settingsButtonText: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    button: {
+      width: 220,
+      height: 220,
+      borderRadius: 110,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    buttonImage: {
+      width: '100%',
+      height: '100%',
+    },
+    highlight: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: '#ffffff',
+    },
+    scrollScreen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    screenContent: {
+      paddingHorizontal: 24,
+      paddingTop: 64,
+      paddingBottom: 40,
+    },
+    header: {
+      marginBottom: 32,
+    },
+    backButton: {
+      alignSelf: 'flex-start',
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 999,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      backgroundColor: colors.controlBackground,
+    },
+    backButtonText: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    title: {
+      color: colors.text,
+      fontSize: 34,
+      fontWeight: '700',
+    },
+    section: {
+      borderTopWidth: 1,
+      borderColor: colors.border,
+      paddingTop: 20,
+      marginBottom: 28,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '700',
+      marginBottom: 12,
+    },
+    segmentedControl: {
+      flexDirection: 'row',
+      gap: 8,
+      backgroundColor: colors.controlBackground,
+      borderRadius: 999,
+      padding: 4,
+    },
+    segmentButton: {
+      flex: 1,
+      borderRadius: 999,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    segmentButtonActive: {
+      backgroundColor: colors.activeBackground,
+    },
+    segmentButtonText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    segmentButtonTextActive: {
+      color: colors.activeText,
+    },
+    settingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 16,
+    },
+    settingDescription: {
+      color: colors.mutedText,
+      fontSize: 15,
+    },
+    aboutButton: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 999,
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      backgroundColor: colors.controlBackground,
+      alignItems: 'center',
+    },
+    aboutButtonText: {
+      color: colors.text,
+      fontSize: 17,
+      fontWeight: '700',
+    },
+    linkText: {
+      color: colors.link,
+      fontSize: 16,
+      lineHeight: 24,
+    },
+  });
+}
