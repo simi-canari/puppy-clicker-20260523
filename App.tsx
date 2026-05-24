@@ -6,13 +6,13 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   useColorScheme,
-  Vibration,
   View,
 } from 'react-native';
 
@@ -106,14 +106,22 @@ export default function App() {
     saveSettings({ theme, hapticsEnabled: nextValue });
   }
 
+  function playHapticFeedback() {
+    if (Platform.OS === 'android') {
+      Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Context_Click);
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }
+
   function playClick() {
     const clickPlayers = [clickPlayerOne, clickPlayerTwo, clickPlayerThree];
     const clickPlayer = clickPlayers[nextPlayerIndex.current];
     nextPlayerIndex.current = (nextPlayerIndex.current + 1) % clickPlayers.length;
 
     if (hapticsEnabled) {
-      Vibration.vibrate(20);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      playHapticFeedback();
     }
 
     clickPlayer.play();
