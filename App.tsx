@@ -282,7 +282,7 @@ export default function App() {
         </View>
 
         <Pressable style={styles.aboutButton} onPress={() => setScreen('about')}>
-          <Text style={styles.aboutButtonText}>About</Text>
+          <Text style={styles.aboutButtonText}>About 🐕</Text>
         </Pressable>
       </ScrollView>
     );
