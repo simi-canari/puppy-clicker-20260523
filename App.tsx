@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import { setAudioModeAsync } from 'expo-audio';
 import { useClickSound } from './useClickSound';
+import VolumeSlider from './VolumeSlider';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -31,17 +32,20 @@ type SavedSettings = {
   theme: ThemeSetting;
   hapticsEnabled: boolean;
   showCounter: boolean;
+  volume: number;
 };
 
 const defaultSettings: SavedSettings = {
   theme: 'system',
   hapticsEnabled: true,
   showCounter: true,
+  volume: 1,
 };
 
 export default function App() {
   const systemTheme = useColorScheme();
-  const { press: playSound, release: releaseSound, error: soundError } = useClickSound();
+  const [volume, setVolumeState] = useState(defaultSettings.volume);
+  const { press: playSound, release: releaseSound, error: soundError } = useClickSound(volume);
   const buttonScale = useRef(new Animated.Value(1)).current;
   const [screen, setScreen] = useState<Screen>('main');
   const [theme, setThemeState] = useState<ThemeSetting>(defaultSettings.theme);
@@ -84,6 +88,9 @@ export default function App() {
       if (typeof parsedSettings.showCounter === 'boolean') {
         setShowCounterState(parsedSettings.showCounter);
       }
+      if (typeof parsedSettings.volume === 'number' && Number.isFinite(parsedSettings.volume)) {
+        setVolumeState(Math.max(0, Math.min(1, parsedSettings.volume)));
+      }
     }
 
     loadSettings();
@@ -98,17 +105,22 @@ export default function App() {
 
   function setTheme(nextTheme: ThemeSetting) {
     setThemeState(nextTheme);
-    saveSettings({ theme: nextTheme, hapticsEnabled, showCounter });
+    saveSettings({ theme: nextTheme, hapticsEnabled, showCounter, volume });
   }
 
   function setHapticsEnabled(nextValue: boolean) {
     setHapticsEnabledState(nextValue);
-    saveSettings({ theme, hapticsEnabled: nextValue, showCounter });
+    saveSettings({ theme, hapticsEnabled: nextValue, showCounter, volume });
   }
 
   function setShowCounter(nextValue: boolean) {
     setShowCounterState(nextValue);
-    saveSettings({ theme, hapticsEnabled, showCounter: nextValue });
+    saveSettings({ theme, hapticsEnabled, showCounter: nextValue, volume });
+  }
+
+  function setVolume(nextValue: number) {
+    setVolumeState(nextValue);
+    saveSettings({ theme, hapticsEnabled, showCounter, volume: nextValue });
   }
 
   function playHapticFeedback() {
@@ -231,6 +243,12 @@ export default function App() {
               </Pressable>
             ))}
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Volume · {Math.round(volume * 100)}%</Text>
+          <Text style={styles.settingDescription}>Click sound volume</Text>
+          <VolumeSlider value={volume} onChange={setVolume} color={colors.link} />
         </View>
 
         <View style={styles.section}>

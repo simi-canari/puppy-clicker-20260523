@@ -19,6 +19,7 @@ function setup() {
     state = 'suspended';
     sources = [];
     destination = {};
+    gains = [];
     constructor() { contexts.push(this); }
     resume() {
       if (stalled) return new Promise(resolve => {
@@ -29,10 +30,15 @@ function setup() {
     }
     close() { this.state = 'closed'; return Promise.resolve(); }
     decodeAudioData() { decodes++; return Promise.resolve({ decoded: true }); }
+    createGain() {
+      const gain = { gain: { value: 1 }, connect() {} };
+      this.gains.push(gain);
+      return gain;
+    }
     createBufferSource() {
       const source = {
         stopped: false, started: false,
-        connect() {}, disconnect() {},
+        connect(destination) { this.destination = destination; }, disconnect() {},
         start(offset) { assert.equal(offset, 0); this.started = true; },
         stop() { this.stopped = true; },
       };
@@ -170,4 +176,35 @@ test('a new press cancels queued release and ignores an old completion', async (
   assert.equal(context.sources.length, 4);
   assert.equal(context.sources[3].buffer, old.buffer);
   sound.dispose();
+});
+
+test('volume applies to both sounds and can mute an already active sequence', async () => {
+  const { sound, contexts } = setup();
+  sound.setVolume(0.25);
+  sound.press();
+  await tick();
+  const context = contexts[0];
+  const gain = context.gains[0];
+  assert.equal(gain.gain.value, 0.25);
+  assert.equal(context.sources[0].destination, gain);
+  sound.setVolume(0);
+  assert.equal(gain.gain.value, 0);
+  sound.release();
+  context.sources[0].onended();
+  assert.equal(context.sources[1].destination, gain);
+  sound.setVolume(0.8);
+  assert.equal(gain.gain.value, 0.8);
+  sound.dispose();
+});
+
+test('volume survives audio context recovery', async () => {
+  const fixture = setup();
+  fixture.sound.setVolume(0.4);
+  fixture.sound.preload();
+  await tick();
+  fixture.stall(); fixture.sound.press();
+  fixture.recover(); fixture.sound.press();
+  await tick();
+  assert.equal(fixture.contexts[1].gains[0].gain.value, 0.4);
+  fixture.sound.dispose();
 });

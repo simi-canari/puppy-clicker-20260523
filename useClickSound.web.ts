@@ -7,6 +7,8 @@ type ClickBuffers = { in: AudioBuffer; out: AudioBuffer };
 
 export class WebClickSound {
   private context: AudioContext | null = null;
+  private gain: GainNode | null = null;
+  private volume = 1;
   private buffer: ClickBuffers | null = null;
   private loading: Promise<ClickBuffers> | null = null;
   private source: AudioBufferSourceNode | null = null;
@@ -27,10 +29,14 @@ export class WebClickSound {
       this.stop();
       void this.context.close().catch(() => {});
       this.context = null;
+      this.gain = null;
       this.resumeStartedAt = null;
     }
     if (!this.context) {
       this.context = new AudioContext({ latencyHint: 'interactive' });
+      this.gain = this.context.createGain();
+      this.gain.gain.value = this.volume;
+      this.gain.connect(this.context.destination);
     }
     return this.context;
   }
@@ -56,6 +62,11 @@ export class WebClickSound {
     return this.loading;
   }
 
+  setVolume(volume: number) {
+    this.volume = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 1;
+    if (this.gain) this.gain.gain.value = this.volume;
+  }
+
   preload() {
     try {
       void this.load(this.getContext()).catch(() => {
@@ -78,7 +89,7 @@ export class WebClickSound {
   private start(context: AudioContext, phase: 'in' | 'out', request: number) {
     const source = context.createBufferSource();
     source.buffer = this.buffer![phase];
-    source.connect(context.destination);
+    source.connect(this.gain!);
     this.source = source;
     this.phase = phase;
     source.onended = () => {
@@ -158,12 +169,19 @@ export class WebClickSound {
   }
 }
 
-export function useClickSound() {
+export function useClickSound(volume = 1) {
   const player = useRef<WebClickSound | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const latestVolume = useRef(volume);
+  latestVolume.current = volume;
+
+  useEffect(() => {
+    player.current?.setVolume(volume);
+  }, [volume]);
 
   useEffect(() => {
     const sound = new WebClickSound(setError);
+    sound.setVolume(latestVolume.current);
     player.current = sound;
     sound.preload();
     const onVisibility = () => {
