@@ -24,7 +24,7 @@ const audioOptions = {
   updateInterval: 1000,
 };
 const resetDelayMs = 1500;
-const settingsStorageKey = 'dog-clicker-settings';
+const settingsStorageKey = 'puppy-clicker-settings';
 const socialLink = 'https://github.com/simi-canari';
 const soundCreditLink =
   'https://pixabay.com/fr/sound-effects/films-et-effets-sp%C3%A9ciaux-metal-clicker-dog-training-stereo-clip-74690/';

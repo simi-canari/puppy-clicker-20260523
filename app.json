@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "dog-clicker",
-    "slug": "dog-clicker",
+    "name": "puppy-clicker",
+    "slug": "puppy-clicker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,7 +17,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.smncanari.dogclicker",
+      "package": "com.smncanari.puppyclicker",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
