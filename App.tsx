@@ -153,8 +153,6 @@ export default function App() {
     if (hapticsEnabled) {
       playHapticFeedback();
     }
-
-    setClickCount((currentCount) => currentCount + 1);
   }
 
   function handlePressIn() {
@@ -171,6 +169,7 @@ export default function App() {
 
   function handlePressOut() {
     releaseSound();
+    setClickCount((currentCount) => currentCount + 1);
     Animated.parallel([
       Animated.spring(buttonScale, {
         toValue: 1,
@@ -188,7 +187,14 @@ export default function App() {
           <Text style={styles.settingsButtonText}>⚙</Text>
         </Pressable>
 
-        <Pressable nativeID="clicker-control" onPressIn={handlePressIn} onPressOut={handlePressOut}>
+        <Pressable
+          nativeID="clicker-control"
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          // Android Chrome can otherwise terminate a held press on contextmenu.
+          // Registering a long press keeps the responder active until release.
+          onLongPress={Platform.OS === 'web' ? () => {} : undefined}
+        >
           <Animated.View
             style={[styles.button, { transform: [{ scale: buttonScale }] }]}
           >
