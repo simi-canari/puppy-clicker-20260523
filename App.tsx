@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { setAudioModeAsync } from 'expo-audio';
 import { useClickSound } from './useClickSound';
 import VolumeSlider from './VolumeSlider';
+import { useSilentMode } from './useSilentMode';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -33,6 +34,7 @@ type SavedSettings = {
   hapticsEnabled: boolean;
   showCounter: boolean;
   volume: number;
+  playInSilentMode: boolean;
 };
 
 const defaultSettings: SavedSettings = {
@@ -40,11 +42,14 @@ const defaultSettings: SavedSettings = {
   hapticsEnabled: true,
   showCounter: true,
   volume: 1,
+  playInSilentMode: true,
 };
 
 export default function App() {
   const systemTheme = useColorScheme();
   const [volume, setVolumeState] = useState(defaultSettings.volume);
+  const [playInSilentMode, setPlayInSilentModeState] = useState(defaultSettings.playInSilentMode);
+  const supportsSilentMode = useSilentMode(playInSilentMode);
   const { press: playSound, release: releaseSound, error: soundError } = useClickSound(volume);
   const buttonScale = useRef(new Animated.Value(1)).current;
   const [screen, setScreen] = useState<Screen>('main');
@@ -106,6 +111,9 @@ export default function App() {
       if (typeof parsedSettings.volume === 'number' && Number.isFinite(parsedSettings.volume)) {
         setVolumeState(Math.max(0, Math.min(1, parsedSettings.volume)));
       }
+      if (typeof parsedSettings.playInSilentMode === 'boolean') {
+        setPlayInSilentModeState(parsedSettings.playInSilentMode);
+      }
     }
 
     loadSettings();
@@ -120,22 +128,27 @@ export default function App() {
 
   function setTheme(nextTheme: ThemeSetting) {
     setThemeState(nextTheme);
-    saveSettings({ theme: nextTheme, hapticsEnabled, showCounter, volume });
+    saveSettings({ theme: nextTheme, hapticsEnabled, showCounter, volume, playInSilentMode });
   }
 
   function setHapticsEnabled(nextValue: boolean) {
     setHapticsEnabledState(nextValue);
-    saveSettings({ theme, hapticsEnabled: nextValue, showCounter, volume });
+    saveSettings({ theme, hapticsEnabled: nextValue, showCounter, volume, playInSilentMode });
   }
 
   function setShowCounter(nextValue: boolean) {
     setShowCounterState(nextValue);
-    saveSettings({ theme, hapticsEnabled, showCounter: nextValue, volume });
+    saveSettings({ theme, hapticsEnabled, showCounter: nextValue, volume, playInSilentMode });
   }
 
   function setVolume(nextValue: number) {
     setVolumeState(nextValue);
-    saveSettings({ theme, hapticsEnabled, showCounter, volume: nextValue });
+    saveSettings({ theme, hapticsEnabled, showCounter, volume: nextValue, playInSilentMode });
+  }
+
+  function setPlayInSilentMode(nextValue: boolean) {
+    setPlayInSilentModeState(nextValue);
+    saveSettings({ theme, hapticsEnabled, showCounter, volume, playInSilentMode: nextValue });
   }
 
   function playHapticFeedback() {
@@ -271,6 +284,22 @@ export default function App() {
           <Text style={styles.settingDescription}>Click sound volume</Text>
           <VolumeSlider value={volume} onChange={setVolume} color={colors.link} />
         </View>
+
+        {supportsSilentMode && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Play sound in silent mode</Text>
+            <Text style={styles.settingDescription}>
+              Plays in silent mode. May pause other audio.
+            </Text>
+            <Switch
+              accessibilityLabel="Play sound in silent mode"
+              value={playInSilentMode}
+              onValueChange={setPlayInSilentMode}
+              trackColor={{ false: colors.switchTrackOff, true: colors.switchTrackOn }}
+              thumbColor={colors.switchThumb}
+            />
+          </View>
+        )}
 
         {/* Haptics setting temporarily hidden.
         <View style={styles.section}>
