@@ -266,6 +266,7 @@ export default function App() {
           <VolumeSlider value={volume} onChange={setVolume} color={colors.link} />
         </View>
 
+        {/* Haptics setting temporarily hidden.
         <View style={styles.section}>
           <View style={styles.settingRow}>
             <View>
@@ -283,6 +284,7 @@ export default function App() {
             />
           </View>
         </View>
+        */}
 
         <View style={styles.section}>
           <View style={styles.settingRow}>
