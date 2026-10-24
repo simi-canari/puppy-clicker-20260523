@@ -68,6 +68,21 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const preventImageAction = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest('#clicker-control')) {
+        event.preventDefault();
+      }
+    };
+    document.addEventListener('dragstart', preventImageAction);
+    document.addEventListener('contextmenu', preventImageAction);
+    return () => {
+      document.removeEventListener('dragstart', preventImageAction);
+      document.removeEventListener('contextmenu', preventImageAction);
+    };
+  }, []);
+
+  useEffect(() => {
     async function loadSettings() {
       const savedSettings = await AsyncStorage.getItem(settingsStorageKey);
 
@@ -173,7 +188,7 @@ export default function App() {
           <Text style={styles.settingsButtonText}>⚙</Text>
         </Pressable>
 
-        <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
+        <Pressable nativeID="clicker-control" onPressIn={handlePressIn} onPressOut={handlePressOut}>
           <Animated.View
             style={[styles.button, { transform: [{ scale: buttonScale }] }]}
           >

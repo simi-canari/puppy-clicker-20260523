@@ -16,6 +16,17 @@
     <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
+      /* Keep a held clicker from becoming an image drag or Safari callout. */
+      #clicker-control,
+      #clicker-control * {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      #clicker-control img {
+        pointer-events: none;
+      }
       /* These styles make the body full-height */
       html,
       body {
