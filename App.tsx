@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
-import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
+import { setAudioModeAsync } from 'expo-audio';
+import { useClickSound } from './useClickSound';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -16,14 +17,8 @@ import {
   View,
 } from 'react-native';
 
-const clickSound = require('./assets/sounds/click.mp3');
 const clickerImage = require('./assets/images/clicker.png');
 
-const audioOptions = {
-  keepAudioSessionActive: true,
-  updateInterval: 1000,
-};
-const resetDelayMs = 1500;
 const settingsStorageKey = 'puppy-clicker-settings';
 const socialLink = 'https://github.com/simi-canari';
 const soundCreditLink =
@@ -46,10 +41,7 @@ const defaultSettings: SavedSettings = {
 
 export default function App() {
   const systemTheme = useColorScheme();
-  const clickPlayerOne = useAudioPlayer(clickSound, audioOptions);
-  const clickPlayerTwo = useAudioPlayer(clickSound, audioOptions);
-  const clickPlayerThree = useAudioPlayer(clickSound, audioOptions);
-  const nextPlayerIndex = useRef(0);
+  const { play: playSound, error: soundError } = useClickSound();
   const buttonScale = useRef(new Animated.Value(1)).current;
   const [screen, setScreen] = useState<Screen>('main');
   const [theme, setThemeState] = useState<ThemeSetting>(defaultSettings.theme);
@@ -64,6 +56,7 @@ export default function App() {
   const styles = createStyles(colors);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     setAudioModeAsync({
       interruptionMode: 'mixWithOthers',
       playsInSilentMode: true,
@@ -128,21 +121,13 @@ export default function App() {
   }
 
   function playClick() {
-    const clickPlayers = [clickPlayerOne, clickPlayerTwo, clickPlayerThree];
-    const clickPlayer = clickPlayers[nextPlayerIndex.current];
-    nextPlayerIndex.current = (nextPlayerIndex.current + 1) % clickPlayers.length;
+    playSound();
 
     if (hapticsEnabled) {
       playHapticFeedback();
     }
 
     setClickCount((currentCount) => currentCount + 1);
-    clickPlayer.play();
-
-    setTimeout(() => {
-      clickPlayer.pause();
-      clickPlayer.seekTo(0);
-    }, resetDelayMs);
   }
 
   function handlePressIn() {
@@ -202,7 +187,9 @@ export default function App() {
           </View>
         )}
 
-        <Text style={styles.mainHint}>Tap to click</Text>
+        <Text style={styles.mainHint} accessibilityLiveRegion="polite">
+          {soundError ?? 'Tap to click'}
+        </Text>
       </View>
     );
   }
