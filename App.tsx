@@ -59,6 +59,7 @@ export default function App() {
   );
   const [showCounter, setShowCounterState] = useState(defaultSettings.showCounter);
   const [clickCount, setClickCount] = useState(0);
+  const [hasClicked, setHasClicked] = useState(false);
 
   const activeTheme = theme === 'system' ? systemTheme ?? 'light' : theme;
   const colors = activeTheme === 'dark' ? darkColors : lightColors;
@@ -182,6 +183,7 @@ export default function App() {
 
   function handlePressOut() {
     releaseSound();
+    setHasClicked(true);
     setClickCount((currentCount) => currentCount + 1);
     Animated.parallel([
       Animated.spring(buttonScale, {
@@ -234,9 +236,11 @@ export default function App() {
           </View>
         )}
 
-        <Text style={styles.mainHint} accessibilityLiveRegion="polite">
-          {soundError ?? 'Tap to click'}
-        </Text>
+        {(soundError || !hasClicked) && (
+          <Text style={styles.mainHint} accessibilityLiveRegion="polite">
+            {soundError ?? 'Tap to click'}
+          </Text>
+        )}
       </View>
     );
   }
