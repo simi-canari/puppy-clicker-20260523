@@ -1,16 +1,20 @@
 import { Asset } from 'expo-asset';
 import { useEffect, useRef, useState } from 'react';
 
-const clickSound = require('./assets/sounds/click.mp3');
+const clickIn = require('./assets/sounds/click in.mp3');
+const clickOut = require('./assets/sounds/click out.mp3');
+type ClickBuffers = { in: AudioBuffer; out: AudioBuffer };
 
 export class WebClickSound {
   private context: AudioContext | null = null;
-  private buffer: AudioBuffer | null = null;
-  private loading: Promise<AudioBuffer> | null = null;
+  private buffer: ClickBuffers | null = null;
+  private loading: Promise<ClickBuffers> | null = null;
   private source: AudioBufferSourceNode | null = null;
   private request = 0;
   private disposed = false;
   private resumeStartedAt: number | null = null;
+  private phase: 'idle' | 'loading' | 'in' | 'held' | 'out' = 'idle';
+  private released = false;
 
   constructor(private reportError: (message: string | null) => void) {}
 
@@ -31,14 +35,17 @@ export class WebClickSound {
     return this.context;
   }
 
-  private load(context: AudioContext): Promise<AudioBuffer> {
+  private load(context: AudioContext): Promise<ClickBuffers> {
     if (this.buffer) return Promise.resolve(this.buffer);
     if (!this.loading) {
       this.loading = (async () => {
-        const uri = Asset.fromModule(clickSound).uri;
-        const response = await fetch(uri);
-        if (!response.ok) throw new Error('Unable to load click sound');
-        const buffer = await context.decodeAudioData(await response.arrayBuffer());
+        const decode = async (asset: number) => {
+          const response = await fetch(Asset.fromModule(asset).uri);
+          if (!response.ok) throw new Error('Unable to load click sound');
+          return context.decodeAudioData(await response.arrayBuffer());
+        };
+        const [press, release] = await Promise.all([decode(clickIn), decode(clickOut)]);
+        const buffer = { in: press, out: release };
         this.buffer = buffer;
         return buffer;
       })().catch((error) => {
@@ -61,16 +68,39 @@ export class WebClickSound {
 
   private stop() {
     if (this.source) {
+      this.source.onended = null;
       this.source.stop();
       this.source.disconnect();
       this.source = null;
     }
   }
 
-  play = () => {
+  private start(context: AudioContext, phase: 'in' | 'out', request: number) {
+    const source = context.createBufferSource();
+    source.buffer = this.buffer![phase];
+    source.connect(context.destination);
+    this.source = source;
+    this.phase = phase;
+    source.onended = () => {
+      source.disconnect();
+      if (this.disposed || request !== this.request || this.source !== source) return;
+      this.source = null;
+      if (phase === 'in') {
+        this.phase = 'held';
+        if (this.released) this.start(context, 'out', request);
+      } else {
+        this.phase = 'idle';
+      }
+    };
+    source.start(0);
+  }
+
+  press = () => {
     if (this.disposed) return;
     const request = ++this.request;
     this.stop();
+    this.phase = 'loading';
+    this.released = false;
     try {
       const context = this.getContext();
       // Call resume synchronously in the input handler, before any fetch/await.
@@ -83,29 +113,34 @@ export class WebClickSound {
         if (this.disposed || request !== this.request || context !== this.context) return;
         if (context.state !== 'running') throw new Error('Audio is suspended');
         this.resumeStartedAt = null;
-        const source = context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(context.destination);
-        this.source = source;
-        source.onended = () => {
-          source.disconnect();
-          if (this.source === source) this.source = null;
-        };
-        source.start(0);
+        this.start(context, 'in', request);
         this.reportError(null);
       }).catch(() => {
         if (!this.disposed && request === this.request) {
+          this.phase = 'idle';
           this.reportError('Sound could not start. Tap to retry.');
         }
       });
     } catch {
+      this.phase = 'idle';
       this.reportError('Sound could not start. Tap to retry.');
+    }
+  };
+
+  release = () => {
+    this.unlock();
+    if (this.disposed || this.phase === 'idle' || this.phase === 'out' || this.released) return;
+    this.released = true;
+    if (this.phase === 'held' && this.context) {
+      this.start(this.context, 'out', this.request);
     }
   };
 
   interrupt = () => {
     ++this.request;
     this.stop();
+    this.phase = 'idle';
+    this.released = false;
   };
 
   unlock = () => {
@@ -148,5 +183,9 @@ export function useClickSound() {
     };
   }, []);
 
-  return { play: () => player.current?.play(), error };
+  return {
+    press: () => player.current?.press(),
+    release: () => player.current?.release(),
+    error,
+  };
 }

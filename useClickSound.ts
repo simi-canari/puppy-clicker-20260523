@@ -22,5 +22,5 @@ export function useClickSound() {
     }, 1500);
   }
 
-  return { play, error: null as string | null };
+  return { press: play, release: () => {}, error: null as string | null };
 }

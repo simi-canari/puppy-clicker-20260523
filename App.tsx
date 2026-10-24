@@ -41,7 +41,7 @@ const defaultSettings: SavedSettings = {
 
 export default function App() {
   const systemTheme = useColorScheme();
-  const { play: playSound, error: soundError } = useClickSound();
+  const { press: playSound, release: releaseSound, error: soundError } = useClickSound();
   const buttonScale = useRef(new Animated.Value(1)).current;
   const [screen, setScreen] = useState<Screen>('main');
   const [theme, setThemeState] = useState<ThemeSetting>(defaultSettings.theme);
@@ -143,6 +143,7 @@ export default function App() {
   }
 
   function handlePressOut() {
+    releaseSound();
     Animated.parallel([
       Animated.spring(buttonScale, {
         toValue: 1,
