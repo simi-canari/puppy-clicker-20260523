@@ -2,8 +2,6 @@
 
 Repeat on Windows, Android Chrome and iPhone Safari, in the browser and installed PWA.
 
-- [ ] Long hold, quick release and rapid presses retain the correct in/out sound sequence.
-- [ ] Release after a long hold still plays click out; a new press restarts the sound sequence.
 - [ ] Audio works after backgrounding, locking and reopening, at the saved volume.
 - [ ] Offline reopening retains the image, both sounds, slider and saved preferences.
 - [ ] Update prompt waits for acceptance; reload preserves settings and a second tab stays open.
