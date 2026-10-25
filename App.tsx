@@ -198,7 +198,12 @@ export default function App() {
   function renderMainScreen() {
     return (
       <View style={styles.container}>
-        <Pressable style={styles.settingsButton} onPress={() => setScreen('settings')}>
+        <Pressable
+          style={styles.settingsButton}
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+          onPress={() => setScreen('settings')}
+        >
           <Text style={styles.settingsButtonText}>⚙</Text>
         </Pressable>
 
@@ -436,6 +441,7 @@ function createStyles(colors: typeof lightColors) {
     },
     settingsButton: {
       position: 'absolute',
+      zIndex: 1,
       top: 64,
       right: 24,
       width: 48,
