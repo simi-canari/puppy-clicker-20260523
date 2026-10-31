@@ -1,5 +1,9 @@
 # Testing checklist
 
+- [ ] Fix incorrect button dimensions; verify sizing on desktop, mobile and the itch.io embedded player.
+
+Deployment reference: [itch.io HTML5 deployment guide](docs/itchio-deployment-guide.md).
+
 Repeat on Windows, Android Chrome and iPhone Safari, in the browser and installed PWA.
 
 - [ ] Audio works after backgrounding, locking and reopening, at the saved volume.
