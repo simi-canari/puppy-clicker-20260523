@@ -23,6 +23,7 @@ const clickerImage = require('./assets/images/clicker.png');
 
 const settingsStorageKey = 'puppy-clicker-settings';
 const socialLink = 'https://github.com/simi-canari';
+const kofiLink = 'https://ko-fi.com/simicanari';
 const soundCreditLink =
   'https://pixabay.com/fr/sound-effects/films-et-effets-sp%C3%A9ciaux-metal-clicker-dog-training-stereo-clip-74690/';
 
@@ -372,6 +373,13 @@ export default function App() {
           <Text style={styles.sectionTitle}>Socials</Text>
           <Pressable onPress={() => Linking.openURL(socialLink)}>
             <Text style={styles.linkText}>{socialLink}</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <Pressable accessibilityRole="link" onPress={() => Linking.openURL(kofiLink)}>
+            <Text style={styles.linkText}>Support me on Ko-fi ☕</Text>
           </Pressable>
         </View>
 
