@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Linking,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -74,7 +75,12 @@ export default function App() {
 
   const activeTheme = theme === 'system' ? systemTheme ?? 'light' : theme;
   const colors = activeTheme === 'dark' ? darkColors : lightColors;
-  const styles = createStyles(colors, Math.max(0, Math.min(460, width, height - 240)));
+  const useSettingsPanel = width >= 640 && height >= 480;
+  const styles = createStyles(
+    colors,
+    Math.max(0, Math.min(460, width, height - 240)),
+    useSettingsPanel
+  );
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -442,9 +448,25 @@ export default function App() {
 
   return (
     <>
-      {screen === 'main' && renderMainScreen()}
-      {screen === 'settings' && renderSettingsScreen()}
-      {screen === 'about' && renderAboutScreen()}
+      {renderMainScreen()}
+      <Modal
+        visible={screen !== 'main'}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setScreen('main')}
+      >
+        <View style={styles.settingsBackdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            accessibilityRole="button"
+            accessibilityLabel="Close settings"
+            onPress={() => setScreen('main')}
+          />
+          <View style={styles.settingsPanel}>
+            {screen === 'settings' ? renderSettingsScreen() : renderAboutScreen()}
+          </View>
+        </View>
+      </Modal>
       <StatusBar style={activeTheme === 'dark' ? 'light' : 'dark'} />
     </>
   );
@@ -486,7 +508,11 @@ const darkColors = {
   switchThumb: '#ffffff',
 };
 
-function createStyles(colors: typeof lightColors, clickerSize: number) {
+function createStyles(
+  colors: typeof lightColors,
+  clickerSize: number,
+  useSettingsPanel: boolean
+) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -570,13 +596,27 @@ function createStyles(colors: typeof lightColors, clickerSize: number) {
       textAlign: 'center',
       paddingHorizontal: 24,
     },
+    settingsBackdrop: {
+      flex: 1,
+      alignItems: 'flex-end',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    settingsPanel: {
+      width: '100%',
+      maxWidth: useSettingsPanel ? 440 : undefined,
+      height: '100%',
+      borderLeftWidth: useSettingsPanel ? 1 : 0,
+      borderColor: colors.border,
+      overflow: 'hidden',
+      backgroundColor: colors.background,
+    },
     scrollScreen: {
       flex: 1,
       backgroundColor: colors.background,
     },
     screenContent: {
       paddingHorizontal: 24,
-      paddingTop: 64,
+      paddingTop: useSettingsPanel ? 28 : 64,
       paddingBottom: 40,
     },
     header: {
