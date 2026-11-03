@@ -29,6 +29,7 @@ const clickerLabels = { cat: '🐈 Kitty', dog: '🐕 Puppy' };
 
 const settingsStorageKey = 'puppy-clicker-settings';
 const socialLink = 'https://github.com/simi-canari';
+const xLink = 'https://x.com/simi_canari';
 const kofiLink = 'https://ko-fi.com/simicanari';
 const soundCreditLink =
   'https://pixabay.com/fr/sound-effects/films-et-effets-sp%C3%A9ciaux-metal-clicker-dog-training-stereo-clip-74690/';
@@ -426,6 +427,13 @@ export default function App() {
           <Text style={styles.sectionTitle}>Socials</Text>
           <Pressable onPress={() => Linking.openURL(socialLink)}>
             <Text style={styles.linkText}>{socialLink}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            style={{ marginTop: 12 }}
+            onPress={() => Linking.openURL(xLink)}
+          >
+            <Text style={styles.linkText}>{xLink}</Text>
           </Pressable>
         </View>
 
