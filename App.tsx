@@ -16,6 +16,7 @@ import {
   Switch,
   Text,
   useColorScheme,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -48,6 +49,7 @@ const defaultSettings: SavedSettings = {
 
 export default function App() {
   const systemTheme = useColorScheme();
+  const { width, height } = useWindowDimensions();
   const [volume, setVolumeState] = useState(defaultSettings.volume);
   const [playInSilentMode, setPlayInSilentModeState] = useState(defaultSettings.playInSilentMode);
   const supportsSilentMode = useSilentMode(playInSilentMode);
@@ -64,7 +66,7 @@ export default function App() {
 
   const activeTheme = theme === 'system' ? systemTheme ?? 'light' : theme;
   const colors = activeTheme === 'dark' ? darkColors : lightColors;
-  const styles = createStyles(colors);
+  const styles = createStyles(colors, Math.max(0, Math.min(460, width, height - 240)));
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -333,7 +335,7 @@ export default function App() {
 
         <View style={styles.section}>
           <View style={styles.settingRow}>
-            <View>
+            <View style={styles.settingText}>
               <Text style={styles.sectionTitle}>Click Counter</Text>
               <Text style={styles.settingDescription}>Show clicks on the main screen</Text>
             </View>
@@ -439,7 +441,7 @@ const darkColors = {
   switchThumb: '#ffffff',
 };
 
-function createStyles(colors: typeof lightColors) {
+function createStyles(colors: typeof lightColors, clickerSize: number) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -467,8 +469,8 @@ function createStyles(colors: typeof lightColors) {
       lineHeight: 28,
     },
     button: {
-      width: 460,
-      height: 460,
+      width: clickerSize,
+      height: clickerSize,
       borderRadius: 190,
       alignItems: 'center',
       justifyContent: 'center',
@@ -600,6 +602,10 @@ function createStyles(colors: typeof lightColors) {
     settingDescription: {
       color: colors.mutedText,
       fontSize: 15,
+    },
+    settingText: {
+      flex: 1,
+      minWidth: 0,
     },
     aboutButton: {
       borderWidth: 1,
