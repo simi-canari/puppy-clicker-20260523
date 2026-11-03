@@ -24,7 +24,7 @@ const clickerImages = {
   dog: require('./assets/images/clicker-dog.png'),
   cat: require('./assets/images/clicker-cat.png'),
 };
-const clickerLabels = { cat: '🐈 Kitten', dog: '🐕 Puppy' };
+const clickerLabels = { cat: '🐈 Kitty', dog: '🐕 Puppy' };
 
 const settingsStorageKey = 'puppy-clicker-settings';
 const socialLink = 'https://github.com/simi-canari';
