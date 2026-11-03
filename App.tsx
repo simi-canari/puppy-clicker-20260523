@@ -20,7 +20,11 @@ import {
   View,
 } from 'react-native';
 
-const clickerImage = require('./assets/images/clicker.png');
+const clickerImages = {
+  dog: require('./assets/images/clicker-dog.png'),
+  cat: require('./assets/images/clicker-cat.png'),
+};
+const clickerLabels = { cat: '🐈 Kitten', dog: '🐕 Puppy' };
 
 const settingsStorageKey = 'puppy-clicker-settings';
 const socialLink = 'https://github.com/simi-canari';
@@ -30,8 +34,10 @@ const soundCreditLink =
 
 type Screen = 'main' | 'settings' | 'about';
 type ThemeSetting = 'light' | 'dark' | 'system';
+type ClickerSetting = 'dog' | 'cat';
 
 type SavedSettings = {
+  clicker: ClickerSetting;
   theme: ThemeSetting;
   hapticsEnabled: boolean;
   showCounter: boolean;
@@ -40,6 +46,7 @@ type SavedSettings = {
 };
 
 const defaultSettings: SavedSettings = {
+  clicker: 'dog',
   theme: 'system',
   hapticsEnabled: true,
   showCounter: true,
@@ -57,6 +64,7 @@ export default function App() {
   const buttonScale = useRef(new Animated.Value(1)).current;
   const [screen, setScreen] = useState<Screen>('main');
   const [theme, setThemeState] = useState<ThemeSetting>(defaultSettings.theme);
+  const [clicker, setClickerState] = useState<ClickerSetting>(defaultSettings.clicker);
   const [hapticsEnabled, setHapticsEnabledState] = useState(
     defaultSettings.hapticsEnabled
   );
@@ -101,6 +109,10 @@ export default function App() {
 
       const parsedSettings = JSON.parse(savedSettings) as Partial<SavedSettings>;
 
+      if (parsedSettings.clicker === 'dog' || parsedSettings.clicker === 'cat') {
+        setClickerState(parsedSettings.clicker);
+      }
+
       if (isThemeSetting(parsedSettings.theme)) {
         setThemeState(parsedSettings.theme);
       }
@@ -123,11 +135,16 @@ export default function App() {
     loadSettings();
   }, []);
 
-  async function saveSettings(nextSettings: SavedSettings) {
+  async function saveSettings(nextSettings: Omit<SavedSettings, 'clicker'> & Partial<Pick<SavedSettings, 'clicker'>>) {
     await AsyncStorage.setItem(
       settingsStorageKey,
-      JSON.stringify(nextSettings)
+      JSON.stringify({ clicker, ...nextSettings })
     );
+  }
+
+  function setClicker(nextClicker: ClickerSetting) {
+    setClickerState(nextClicker);
+    saveSettings({ clicker: nextClicker, theme, hapticsEnabled, showCounter, volume, playInSilentMode });
   }
 
   function setTheme(nextTheme: ThemeSetting) {
@@ -222,7 +239,7 @@ export default function App() {
             style={[styles.button, { transform: [{ scale: buttonScale }] }]}
           >
             <Animated.Image
-              source={clickerImage}
+              source={clickerImages[clicker]}
               style={styles.buttonImage}
               resizeMode="contain"
             />
@@ -264,6 +281,34 @@ export default function App() {
             <Text style={styles.backButtonText}>Back</Text>
           </Pressable>
           <Text style={styles.title}>Settings</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Cat/Dog</Text>
+          <View style={styles.segmentedControl}>
+            {(['cat', 'dog'] as ClickerSetting[]).map((item) => (
+              <Pressable
+                key={item}
+                accessibilityRole="radio"
+                accessibilityLabel={clickerLabels[item]}
+                aria-checked={clicker === item}
+                style={[
+                  styles.segmentButton,
+                  clicker === item && styles.segmentButtonActive,
+                ]}
+                onPress={() => setClicker(item)}
+              >
+                <Text
+                  style={[
+                    styles.segmentButtonText,
+                    clicker === item && styles.segmentButtonTextActive,
+                  ]}
+                >
+                  {clickerLabels[item]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         <View style={styles.section}>
