@@ -259,6 +259,8 @@ export default function App() {
             <View style={styles.counterRow}>
               <Pressable
                 style={styles.resetCounterButton}
+                accessibilityRole="button"
+                accessibilityLabel="Reset click count"
                 onPress={() => setClickCount(0)}
               >
                 <Text style={styles.resetCounterButtonText}>↻</Text>
@@ -575,6 +577,8 @@ function createStyles(
       justifyContent: 'center',
       position: 'relative',
       minWidth: 120,
+      // Reserve equal space on both sides so the count stays centered as it grows.
+      paddingHorizontal: 44,
     },
     clickCounter: {
       color: '#4e92fc',
